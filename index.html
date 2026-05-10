@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="الهيثم">
+<meta name="theme-color" content="#00b4a6">
+<title>مختبر الهيثم - المنظومة المالية</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ===== LOGIN SCREEN ===== -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-icon">🔬</div>
+      <h1>مختبر الهيثم</h1>
+      <p>المنظومة المالية المتكاملة</p>
+    </div>
+    <div id="login-error" class="login-error" style="display:none"></div>
+    <div class="form-group" style="margin-bottom:12px">
+      <label>البريد الإلكتروني</label>
+      <input type="email" id="login-email" placeholder="example@email.com" dir="ltr">
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label>كلمة المرور</label>
+      <input type="password" id="login-password" placeholder="••••••••" dir="ltr">
+    </div>
+    <button class="btn btn-primary" style="width:100%;padding:12px" onclick="doLogin()" id="login-btn">
+      🔐 تسجيل الدخول
+    </button>
+    <div class="login-footer">
+      <span>نظام مغلق · للمصرح لهم فقط</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===== MAIN APP (hidden until login) ===== -->
+<div id="app" style="display:none">
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">🔬</div>
+    <div class="logo-text">
+      <h1 id="lab-name-display">مختبر الهيثم للتحاليل الطبية</h1>
+      <p>المنظومة المالية المتكاملة</p>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="header-date" id="headerDate"></div>
+    <div id="user-badge" class="user-badge"></div>
+    <button class="btn-logout" onclick="doLogout()" title="تسجيل الخروج">⏻</button>
+  </div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="showSection('dashboard',this)">📊 الرئيسية</button>
+  <button class="nav-btn" onclick="showSection('revenue',this)">💰 الإيرادات</button>
+  <button class="nav-btn" onclick="showSection('expenses',this)">📤 المصروفات</button>
+  <button class="nav-btn" onclick="showSection('debts',this)">🏢 الموردون</button>
+  <button class="nav-btn" onclick="showSection('labs',this)">🔄 المعامل</button>
+  <button class="nav-btn" onclick="showSection('contracts',this)">📄 التعاقدات</button>
+  <button class="nav-btn" onclick="showSection('salaries',this)">👥 الرواتب</button>
+  <button class="nav-btn" onclick="showSection('monthly',this)">📅 التقرير</button>
+  <button class="nav-btn" onclick="showSection('settings',this)">⚙️ الإعدادات</button>
+</div>
+
+<!-- Sync indicator -->
+<div id="sync-bar" class="sync-bar" style="display:none">
+  <span id="sync-msg">🔄 جارٍ المزامنة...</span>
+</div>
+
+<div class="main">
+
+<!-- DASHBOARD -->
+<div class="section active" id="sec-dashboard">
+  <div class="cards-row">
+    <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-label">إيرادات اليوم</div><div class="stat-val green" id="dash-today-rev">0</div></div>
+    <div class="stat-card"><div class="stat-icon">📤</div><div class="stat-label">مصروفات اليوم</div><div class="stat-val red" id="dash-today-exp">0</div></div>
+    <div class="stat-card"><div class="stat-icon">📊</div><div class="stat-label">صافي اليوم</div><div class="stat-val teal" id="dash-today-net">0</div></div>
+    <div class="stat-card"><div class="stat-icon">📅</div><div class="stat-label">إيرادات الشهر</div><div class="stat-val green" id="dash-month-rev">0</div></div>
+    <div class="stat-card"><div class="stat-icon">🏢</div><div class="stat-label">ديون الموردين</div><div class="stat-val gold" id="dash-debts">0</div></div>
+    <div class="stat-card"><div class="stat-icon">🔄</div><div class="stat-label">مستحقات المعامل</div><div class="stat-val teal" id="dash-labs">0</div></div>
+  </div>
+  <div class="two-col">
+    <div><div class="sec-title">📋 آخر الإيرادات</div>
+      <div class="table-wrap"><table><thead><tr><th>التاريخ</th><th>المبلغ</th><th>الدفع</th></tr></thead><tbody id="dash-rev-table"></tbody></table></div></div>
+    <div><div class="sec-title">📋 آخر المصروفات</div>
+      <div class="table-wrap"><table><thead><tr><th>التاريخ</th><th>البند</th><th>المبلغ</th></tr></thead><tbody id="dash-exp-table"></tbody></table></div></div>
+  </div>
+</div>
+
+<!-- REVENUE -->
+<div class="section" id="sec-revenue">
+  <div class="sec-title">💰 تسجيل الإيرادات اليومية</div>
+  <div class="form-card">
+    <div class="form-grid">
+      <div class="form-group"><label>التاريخ</label><input type="date" id="rev-date"></div>
+      <div class="form-group"><label>المبلغ</label><input type="number" id="rev-amount" placeholder="0" inputmode="decimal"></div>
+      <div class="form-group"><label>ملاحظات</label><input type="text" id="rev-note" placeholder="اختياري"></div>
+    </div>
+    <div style="margin-top:12px"><label>طريقة الدفع</label><div class="pay-tags" id="pay-tags-container"></div></div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="addRevenue()">➕ تسجيل الإيراد</button></div>
+  </div>
+  <div class="date-bar">
+    <label>تصفية:</label><input type="date" id="rev-filter-date" oninput="renderRevenue()">
+    <button class="btn btn-sm btn-outline" onclick="document.getElementById('rev-filter-date').value='';renderRevenue()">الكل</button>
+  </div>
+  <div class="table-wrap"><table><thead><tr><th>التاريخ</th><th>المبلغ</th><th>طريقة الدفع</th><th>ملاحظات</th><th>✏️</th><th>🗑</th></tr></thead><tbody id="revenue-table"></tbody></table></div>
+  <div class="summary-box"><div class="summary-grid" id="rev-methods-summary"></div></div>
+</div>
+
+<!-- EXPENSES -->
+<div class="section" id="sec-expenses">
+  <div class="sec-title">📤 تسجيل المصروفات</div>
+  <div class="form-card">
+    <div class="form-grid">
+      <div class="form-group"><label>التاريخ</label><input type="date" id="exp-date"></div>
+      <div class="form-group"><label>نوع المصروف</label>
+        <select id="exp-type"><option>راتب يومي</option><option>سلفة</option><option>مستلزمات</option><option>فواتير</option><option>صيانة</option><option>أخرى</option></select></div>
+      <div class="form-group"><label>البند / الوصف</label><input type="text" id="exp-desc" placeholder="وصف المصروف"></div>
+      <div class="form-group"><label>المبلغ</label><input type="number" id="exp-amount" placeholder="0" inputmode="decimal"></div>
+      <div class="form-group"><label>المستلم</label><input type="text" id="exp-recipient" placeholder="الاسم (اختياري)"></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="addExpense()">➕ تسجيل المصروف</button></div>
+  </div>
+  <div class="date-bar">
+    <label>تصفية:</label><input type="date" id="exp-filter-date" oninput="renderExpenses()">
+    <button class="btn btn-sm btn-outline" onclick="document.getElementById('exp-filter-date').value='';renderExpenses()">الكل</button>
+  </div>
+  <div class="table-wrap"><table><thead><tr><th>التاريخ</th><th>النوع</th><th>البند</th><th>المستلم</th><th>المبلغ</th><th>✏️</th><th>🗑</th></tr></thead><tbody id="expenses-table"></tbody></table></div>
+  <div class="summary-box"><div class="summary-grid">
+    <div class="sum-item"><div class="lbl">رواتب يومية</div><div class="val red" id="exp-sum-salary">0</div></div>
+    <div class="sum-item"><div class="lbl">سلف</div><div class="val gold" id="exp-sum-advance">0</div></div>
+    <div class="sum-item"><div class="lbl">أخرى</div><div class="val" id="exp-sum-misc">0</div></div>
+    <div class="sum-item"><div class="lbl">الإجمالي</div><div class="val red" id="exp-sum-total">0</div></div>
+  </div></div>
+</div>
+
+<!-- DEBTS -->
+<div class="section" id="sec-debts">
+  <div class="sec-title">🏢 ديون شركات المحاليل</div>
+  <div class="form-card">
+    <div class="form-grid">
+      <div class="form-group"><label>اختر شركة محفوظة</label><select id="debt-company-sel"><option value="">-- اختر --</option></select></div>
+      <div class="form-group"><label>أو اكتب اسم جديد</label><input type="text" id="debt-company" placeholder="اسم الشركة"></div>
+      <div class="form-group"><label>المبلغ الأصلي</label><input type="number" id="debt-original" placeholder="0" inputmode="decimal"></div>
+      <div class="form-group"><label>تاريخ الدين</label><input type="date" id="debt-date"></div>
+      <div class="form-group"><label>رقم الفاتورة / ملاحظة</label><input type="text" id="debt-note" placeholder="اختياري"></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="addDebt()">➕ إضافة دين</button></div>
+  </div>
+  <div class="table-wrap"><table><thead><tr><th>الشركة</th><th>الأصلي</th><th>المدفوع</th><th>المتبقي</th><th>التاريخ</th><th>الحالة</th><th>دفع</th><th>🗑</th></tr></thead><tbody id="debts-table"></tbody></table></div>
+  <div class="summary-box"><div class="summary-grid">
+    <div class="sum-item"><div class="lbl">إجمالي الديون</div><div class="val gold" id="debt-total">0</div></div>
+    <div class="sum-item"><div class="lbl">المدفوع</div><div class="val green" id="debt-paid-total">0</div></div>
+    <div class="sum-item"><div class="lbl">المتبقي</div><div class="val red" id="debt-remaining-total">0</div></div>
+  </div></div>
+</div>
+
+<!-- LABS -->
+<div class="section" id="sec-labs">
+  <div class="sec-title">🔄 حسابات المعامل الخارجية</div>
+  <div class="form-card">
+    <div class="form-grid">
+      <div class="form-group"><label>اختر معمل محفوظ</label><select id="lab-name-sel"><option value="">-- اختر --</option></select></div>
+      <div class="form-group"><label>أو اكتب اسم جديد</label><input type="text" id="lab-name-input" placeholder="اسم المعمل"></div>
+      <div class="form-group"><label>الفترة / الشهر</label><input type="month" id="lab-period"></div>
+      <div class="form-group"><label>القيمة الإجمالية</label><input type="number" id="lab-total" placeholder="0" oninput="calcLabNet()" inputmode="decimal"></div>
+      <div class="form-group"><label>نسبة الخصم %</label><input type="number" id="lab-discount" placeholder="0" min="0" max="100" oninput="calcLabNet()" inputmode="decimal"></div>
+      <div class="form-group"><label>مبلغ الخصم</label><input type="number" id="lab-discount-amount" placeholder="0" readonly style="opacity:0.7"></div>
+      <div class="form-group"><label>الصافي المستحق</label><input type="number" id="lab-net" placeholder="0" readonly style="color:var(--teal);font-weight:700"></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="addLab()">➕ إضافة حساب معمل</button></div>
+  </div>
+  <div class="table-wrap"><table><thead><tr><th>المعمل</th><th>الفترة</th><th>الإجمالي</th><th>الخصم%</th><th>مبلغ الخصم</th><th>الصافي</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody id="labs-table"></tbody></table></div>
+  <div class="summary-box"><div class="summary-grid">
+    <div class="sum-item"><div class="lbl">إجمالي القيم</div><div class="val" id="lab-sum-total">0</div></div>
+    <div class="sum-item"><div class="lbl">الخصومات</div><div class="val gold" id="lab-sum-disc">0</div></div>
+    <div class="sum-item"><div class="lbl">الصافي المستحق</div><div class="val teal" id="lab-sum-net">0</div></div>
+    <div class="sum-item"><div class="lbl">المحصل</div><div class="val green" id="lab-sum-collected">0</div></div>
+  </div></div>
+</div>
+
+<!-- CONTRACTS -->
+<div class="section" id="sec-contracts">
+  <div class="sec-title">📄 إدارة التعاقدات</div>
+  <div class="form-card">
+    <div class="form-grid">
+      <div class="form-group"><label>اسم الجهة / المتعاقد معه</label><input type="text" id="con-name" placeholder="اسم الجهة أو الشركة"></div>
+      <div class="form-group"><label>رقم العقد</label><input type="text" id="con-number" placeholder="رقم العقد (اختياري)"></div>
+      <div class="form-group"><label>تاريخ البداية</label><input type="date" id="con-start"></div>
+      <div class="form-group"><label>تاريخ الانتهاء</label><input type="date" id="con-end"></div>
+      <div class="form-group"><label>المبلغ الإجمالي</label><input type="number" id="con-total" placeholder="0" oninput="calcContractNet()" inputmode="decimal"></div>
+      <div class="form-group"><label>نسبة الخصم %</label><input type="number" id="con-discount" placeholder="0" min="0" max="100" oninput="calcContractNet()" inputmode="decimal"></div>
+      <div class="form-group"><label>مبلغ الخصم</label><input type="number" id="con-discount-amount" placeholder="0" readonly style="opacity:0.7"></div>
+      <div class="form-group"><label>الصافي بعد الخصم</label><input type="number" id="con-net" placeholder="0" readonly style="color:var(--teal);font-weight:700"></div>
+      <div class="form-group"><label>ملاحظات</label><input type="text" id="con-note" placeholder="تفاصيل العقد (اختياري)"></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-primary" onclick="addContract()">➕ إضافة عقد</button></div>
+  </div>
+  <div class="table-wrap"><table><thead><tr><th>الجهة</th><th>رقم العقد</th><th>البداية</th><th>الانتهاء</th><th>الإجمالي</th><th>الخصم%</th><th>مبلغ الخصم</th><th>الصافي</th><th>المحصل</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody id="contracts-table"></tbody></table></div>
+  <div class="summary-box"><div class="summary-grid">
+    <div class="sum-item"><div class="lbl">إجمالي العقود</div><div class="val" id="con-sum-total">0</div></div>
+    <div class="sum-item"><div class="lbl">إجمالي الخصومات</div><div class="val gold" id="con-sum-disc">0</div></div>
+    <div class="sum-item"><div class="lbl">الصافي المستحق</div><div class="val teal" id="con-sum-net">0</div></div>
+    <div class="sum-item"><div class="lbl">المحصل</div><div class="val green" id="con-sum-collected">0</div></div>
+    <div class="sum-item"><div class="lbl">المتبقي</div><div class="val red" id="con-sum-remaining">0</div></div>
+  </div></div>
+</div>
+
+<!-- SALARIES -->
+<div class="section" id="sec-salaries">
+  <div class="sec-title">👥 إدارة الرواتب</div>
+  <div class="sub-tabs">
+    <button class="sub-tab active" onclick="showSubTab('emp-tab',this)">🧑‍💼 الموظفون</button>
+    <button class="sub-tab" onclick="showSubTab('sal-tab',this)">💸 صرف الرواتب</button>
+    <button class="sub-tab" onclick="showSubTab('adv-tab',this)">📋 السلف</button>
+  </div>
+  <div class="sub-panel active" id="emp-tab">
+    <div class="form-card"><div class="form-grid">
+      <div class="form-group"><label>الاسم الكامل</label><input type="text" id="emp-name" placeholder="اسم الموظف"></div>
+      <div class="form-group"><label>المنصب</label><input type="text" id="emp-position" placeholder="محلل طبي"></div>
+      <div class="form-group"><label>نوع الراتب</label><select id="emp-salary-type"><option value="شهري">شهري</option><option value="يومي">يومي</option></select></div>
+      <div class="form-group"><label>الراتب الأساسي</label><input type="number" id="emp-salary" placeholder="0" inputmode="decimal"></div>
+    </div><div class="btn-row"><button class="btn btn-primary" onclick="addEmployee()">➕ إضافة موظف</button></div></div>
+    <div class="table-wrap"><table><thead><tr><th>الاسم</th><th>المنصب</th><th>النوع</th><th>الراتب</th><th>🗑</th></tr></thead><tbody id="employees-table"></tbody></table></div>
+  </div>
+  <div class="sub-panel" id="sal-tab">
+    <div class="form-card"><div class="form-grid">
+      <div class="form-group"><label>الموظف</label><select id="sal-emp"></select></div>
+      <div class="form-group"><label>الشهر</label><input type="month" id="sal-month"></div>
+      <div class="form-group"><label>المبلغ</label><input type="number" id="sal-amount" placeholder="0" inputmode="decimal"></div>
+      <div class="form-group"><label>ملاحظات</label><input type="text" id="sal-note" placeholder="راتب كامل / جزئي"></div>
+    </div><div class="btn-row"><button class="btn btn-primary" onclick="addSalaryPayment()">➕ تسجيل الراتب</button></div></div>
+    <div class="table-wrap"><table><thead><tr><th>الموظف</th><th>الشهر</th><th>المبلغ</th><th>ملاحظات</th><th>التاريخ</th><th>🗑</th></tr></thead><tbody id="salaries-table"></tbody></table></div>
+  </div>
+  <div class="sub-panel" id="adv-tab">
+    <div class="form-card"><div class="form-grid">
+      <div class="form-group"><label>الموظف</label><select id="adv-emp"></select></div>
+      <div class="form-group"><label>التاريخ</label><input type="date" id="adv-date"></div>
+      <div class="form-group"><label>المبلغ</label><input type="number" id="adv-amount" placeholder="0" inputmode="decimal"></div>
+      <div class="form-group"><label>السبب</label><input type="text" id="adv-note" placeholder="سبب السلفة"></div>
+    </div><div class="btn-row"><button class="btn btn-primary" onclick="addAdvance()">➕ تسجيل سلفة</button></div></div>
+    <div class="table-wrap"><table><thead><tr><th>الموظف</th><th>التاريخ</th><th>المبلغ</th><th>السبب</th><th>الحالة</th><th>إجراء</th></tr></thead><tbody id="advances-table"></tbody></table></div>
+    <div class="summary-box"><div class="summary-grid">
+      <div class="sum-item"><div class="lbl">إجمالي السلف</div><div class="val gold" id="adv-total">0</div></div>
+      <div class="sum-item"><div class="lbl">المسترد</div><div class="val green" id="adv-recovered">0</div></div>
+      <div class="sum-item"><div class="lbl">المتبقي</div><div class="val red" id="adv-pending">0</div></div>
+    </div></div>
+  </div>
+</div>
+
+<!-- MONTHLY REPORT -->
+<div class="section" id="sec-monthly">
+  <div class="sec-title">📅 التقرير الشهري</div>
+  <div class="date-bar"><label>الشهر:</label><input type="month" id="report-month" oninput="generateReport()"></div>
+  <div class="cards-row">
+    <div class="stat-card"><div class="stat-icon">💰</div><div class="stat-label">إجمالي الإيرادات</div><div class="stat-val green" id="rep-revenue">0</div></div>
+    <div class="stat-card"><div class="stat-icon">📤</div><div class="stat-label">إجمالي المصروفات</div><div class="stat-val red" id="rep-expenses">0</div></div>
+    <div class="stat-card"><div class="stat-icon">👥</div><div class="stat-label">إجمالي الرواتب</div><div class="stat-val gold" id="rep-salaries">0</div></div>
+    <div class="stat-card"><div class="stat-icon">📊</div><div class="stat-label">صافي الربح</div><div class="stat-val teal" id="rep-net">0</div></div>
+  </div>
+  <div class="summary-box">
+    <div class="sec-title" style="margin-bottom:12px">الإيرادات حسب طريقة الدفع</div>
+    <div class="summary-grid" id="rep-methods-summary"></div>
+    <div class="divider"></div>
+    <div id="rep-profit-label" style="font-size:11px;color:var(--muted);margin-bottom:5px">نسبة الربح: 0%</div>
+    <div class="profit-bar"><div class="profit-fill" id="rep-profit-bar" style="width:0%"></div></div>
+  </div>
+  <div style="margin-top:18px"><div class="sec-title">📋 تفاصيل يومية</div>
+    <div class="table-wrap"><table><thead><tr><th>اليوم</th><th>الإيرادات</th><th>المصروفات</th><th>الرواتب</th><th>الصافي</th></tr></thead><tbody id="rep-daily-table"></tbody></table></div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="section" id="sec-settings">
+  <div class="sec-title">⚙️ الإعدادات</div>
+  <div class="settings-grid">
+    <div class="settings-section">
+      <h3>🏥 بيانات المختبر</h3>
+      <div class="form-group" style="margin-bottom:10px"><label>اسم المختبر</label><input type="text" id="set-lab-name"></div>
+      <div class="form-group" style="margin-bottom:10px"><label>العملة</label>
+        <select id="set-currency">
+          <option value="د.ل">دينار ليبي (د.ل)</option>
+          <option value="ر.ي">ريال يمني (ر.ي)</option>
+          <option value="ر.س">ريال سعودي (ر.س)</option>
+          <option value="د.إ">درهم إماراتي (د.إ)</option>
+          <option value="د.ك">دينار كويتي (د.ك)</option>
+          <option value="ر.ع">ريال عماني (ر.ع)</option>
+          <option value="د.ب">دينار بحريني (د.ب)</option>
+          <option value="ر.ق">ريال قطري (ر.ق)</option>
+          <option value="USD">دولار أمريكي (USD)</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:10px"><label>المنطقة الزمنية</label>
+        <select id="set-timezone">
+          <option value="Africa/Tripoli">ليبيا +2</option>
+          <option value="Asia/Aden">اليمن +3</option>
+          <option value="Asia/Riyadh">السعودية +3</option>
+          <option value="Asia/Dubai">الإمارات +4</option>
+          <option value="Asia/Kuwait">الكويت +3</option>
+          <option value="Asia/Qatar">قطر +3</option>
+          <option value="Asia/Muscat">عُمان +4</option>
+          <option value="Asia/Bahrain">البحرين +3</option>
+          <option value="Africa/Cairo">مصر +2</option>
+          <option value="Africa/Casablanca">المغرب</option>
+        </select>
+      </div>
+      <div style="background:var(--navy2);border-radius:9px;padding:12px;text-align:center;margin-bottom:12px">
+        <div class="live-clock" id="live-clock">--:--:--</div>
+        <div class="live-date-str" id="live-date-str">--</div>
+      </div>
+      <button class="btn btn-primary" style="width:100%" onclick="saveSettings()">💾 حفظ الإعدادات</button>
+    </div>
+
+    <div class="settings-section">
+      <h3>🏢 شركات الموردين</h3>
+      <div class="tags-container" id="suppliers-tags"></div>
+      <div class="add-row">
+        <input type="text" id="new-supplier" placeholder="اسم الشركة المورد">
+        <button class="btn btn-primary btn-sm" onclick="addSupplier()">إضافة</button>
+      </div>
+      <div class="info-box">تظهر كخيارات سريعة في قسم ديون الموردين</div>
+    </div>
+
+    <div class="settings-section">
+      <h3>🔄 المعامل الخارجية</h3>
+      <div class="tags-container" id="extlabs-tags"></div>
+      <div class="add-row">
+        <input type="text" id="new-extlab" placeholder="اسم المعمل">
+        <button class="btn btn-primary btn-sm" onclick="addExtLab()">إضافة</button>
+      </div>
+      <div class="info-box">تظهر كخيارات سريعة في قسم حسابات المعامل</div>
+    </div>
+
+    <div class="settings-section">
+      <h3>💳 طرق الدفع</h3>
+      <div class="tags-container" id="payment-methods-tags"></div>
+      <div class="add-row">
+        <input type="text" id="new-payment" placeholder="طريقة دفع جديدة">
+        <button class="btn btn-primary btn-sm" onclick="addPaymentMethod()">إضافة</button>
+      </div>
+      <div class="info-box">تظهر عند تسجيل الإيرادات</div>
+    </div>
+
+    <div class="settings-section">
+      <h3>☁️ حالة المزامنة</h3>
+      <div style="font-size:12px;color:var(--muted);line-height:2.2">
+        <div>👤 المستخدم: <span style="color:var(--teal)" id="settings-user-email">-</span></div>
+        <div>☁️ قاعدة البيانات: <span style="color:var(--green)">Firebase Firestore</span></div>
+        <div>🔄 المزامنة: <span style="color:var(--green)">✅ تلقائية</span></div>
+        <div>📱 متعدد الأجهزة: <span style="color:var(--green)">✅ نعم</span></div>
+      </div>
+      <button class="btn btn-outline" style="width:100%;margin-top:12px" onclick="exportData()">📤 تصدير نسخة احتياطية (JSON)</button>
+      <div class="info-box" style="margin-top:8px">البيانات محفوظة في السحابة ومزامنة تلقائياً بين جميع الأجهزة</div>
+    </div>
+
+    <div class="settings-section">
+      <h3>ℹ️ معلومات التطبيق</h3>
+      <div style="font-size:12px;color:var(--muted);line-height:2.2">
+        <div>📌 الإصدار: <span style="color:var(--teal)">3.0 Cloud</span></div>
+        <div>💾 التخزين: <span style="color:var(--teal)">Firebase Firestore</span></div>
+        <div>🔐 المصادقة: <span style="color:var(--teal)">Firebase Auth</span></div>
+        <div>🌐 النشر: <span style="color:var(--teal)">Vercel Ready</span></div>
+      </div>
+      <div class="info-box" style="margin-top:12px">🔬 <strong>مختبر الهيثم للتحاليل الطبية</strong><br>المنظومة المالية السحابية</div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /main -->
+
+<!-- Modal -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <h3 id="modal-title">تعديل</h3>
+    <div id="modal-body"></div>
+    <div class="modal-btns">
+      <button class="btn btn-primary" onclick="saveEdit()">💾 حفظ</button>
+      <button class="btn btn-outline" onclick="closeModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /app -->
+
+<div class="toast" id="toast"></div>
+
+<!-- Firebase SDKs (modular v10) -->
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

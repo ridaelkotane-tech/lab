@@ -1,0 +1,21 @@
+// firestore.rules
+// ============================================================
+// قواعد الأمان لـ Firestore
+// كل مستخدم يقرأ ويكتب بياناته الخاصة فقط
+// ============================================================
+
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // كل بيانات المستخدم تحت مساره الخاص
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // رفض أي وصول آخر
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
